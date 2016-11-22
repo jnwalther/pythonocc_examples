@@ -63,7 +63,7 @@ def get_pythonocc_bspline_surface(surf_input):
     for i, val in enumerate(mults[1]):
         vmult.SetValue(i+1, int(val))
 
-    return Geom_BSplineSurface(cpts, uknots, vknots, umult, vmult, udeg, vdeg, uperiod, vperiod).GetHandle()
+    return Geom_BSplineSurface(cpts, uknots, vknots, umult, vmult, int(udeg), int(vdeg), uperiod, vperiod).GetHandle()
 
 
 ### Create geometries
