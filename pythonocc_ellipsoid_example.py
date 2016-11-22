@@ -3,6 +3,7 @@ from __future__ import print_function
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
+import sys
 import time
 
 from mpl_toolkits.mplot3d import Axes3D
@@ -23,12 +24,16 @@ def line_from_points(points=[[0.9,0.9,0.9]], vecs=[[1,1,0]]):
     '''
     return [Geom_Line(gp_Pnt(*p), gp_Dir(*vec)).GetHandle() for p, vec in zip(points, vecs)]
 
-def bspline_surface(filename):
+def get_pythonocc_bspline_surface(surf_input):
     '''
     Create bspline surface objects from stored data
     '''
-    with open(filename, 'rb') as f:
-        data = pickle.load(f)
+    try:
+        return surface_from_interpolation(surf_input)
+    except (ImportError, TypeError) as e:
+        print('Could not create surface by interpolation. Falling back to stored data in surf_data_py%s.p.'%sys.version_info[0])
+        with open('surf_data_py%s.p'%sys.version_info[0], 'rb') as f:
+            data = pickle.load(f)
 
     pts_ = data['pts_']
     deg = data['deg']
@@ -60,7 +65,18 @@ def bspline_surface(filename):
 
     return Geom_BSplineSurface(cpts, uknots, vknots, umult, vmult, udeg, vdeg, uperiod, vperiod).GetHandle()
 
+
 ### Create geometries
+
+def surface_from_interpolation(input_array):
+    '''
+    Generate
+    '''
+    from bt_tools.bt_math import interpol_surface
+    from pythonocc_geometry_tools import surfs_from_bsplines
+    surf = interpol_surface.BSplineSurface.from_interpolation_points(input_array)
+    return surfs_from_bsplines([surf], dump=1)[0]
+
 
 def generate_ellipsoid(a, b, c, nu=40, nv=60):
     '''
@@ -93,11 +109,11 @@ def generate_intersection_vectors(c, nxu=100, nxv=10):
 
 ###  Intersect
 
-def intersect(surffile, v):
+def intersect(surf_input, v):
     '''
     Actual intersection
     '''
-    occsurf = bspline_surface('surf_data.p')
+    occsurf = get_pythonocc_bspline_surface(surf_input)
     occvecs = line_from_points(v[:,:3], v[:,3:])
 
     xpts = []
@@ -130,4 +146,4 @@ def intersect(surffile, v):
 if __name__ ==  "__main__":
     basis_profiles = generate_ellipsoid(5.,5.,40.) #just for show, using stored BSpline surface data from pickle
     v = generate_intersection_vectors(40., nxu=50, nxv=50)
-    intersect('surf_data.p', v)
+    intersect(basis_profiles, v)
