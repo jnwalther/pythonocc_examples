@@ -11,7 +11,7 @@ from OCC.Geom import Geom_Line, Geom_BSplineSurface
 from OCC.GeomAPI import GeomAPI_ExtremaCurveSurface
 from OCC.gp import gp_Pnt, gp_Dir
 from OCC.TColgp import TColgp_Array2OfPnt, TColgp_Array1OfPnt
-from OCC.TColStd import TColStd_Array1OfReal, TColStd_Array1OfInteger
+from OCC.TColStd import TColStd_Array1OfReal, TColStd_Array1OfInteger, TColStd_Array2OfReal
 
 fig = plt.figure()
 ax = fig.gca(projection='3d')
@@ -24,7 +24,7 @@ def line_from_points(points=[[0.9,0.9,0.9]], vecs=[[1,1,0]]):
     '''
     return [Geom_Line(gp_Pnt(*p), gp_Dir(*vec)).GetHandle() for p, vec in zip(points, vecs)]
 
-def get_pythonocc_bspline_surface(surf_input):
+def get_pythonocc_bspline_surface(surf_input, use_weights=False):
     '''
     Create bspline surface objects from stored data
     '''
@@ -44,10 +44,12 @@ def get_pythonocc_bspline_surface(surf_input):
     udeg, vdeg = deg
     uperiod, vperiod = periodic
     cpts = TColgp_Array2OfPnt(1, pts_.shape[0], 1, pts_.shape[1])
+    weights = TColStd_Array2OfReal(1, pts_.shape[0], 1, pts_.shape[1])
 
     for i, pts in enumerate(pts_):
         for j, pt in enumerate(pts):
             cpts.SetValue(i+1, j+1, gp_Pnt(*pt))
+            weights.SetValue(i+1, j+1, float(1))
 
     uknots = TColStd_Array1OfReal(1, knots[0].shape[0])
     for i, val in enumerate(knots[0]):
@@ -63,7 +65,10 @@ def get_pythonocc_bspline_surface(surf_input):
     for i, val in enumerate(mults[1]):
         vmult.SetValue(i+1, int(val))
 
-    return Geom_BSplineSurface(cpts, uknots, vknots, umult, vmult, int(udeg), int(vdeg), uperiod, vperiod).GetHandle()
+    if use_weights:
+        return Geom_BSplineSurface(cpts, weights, uknots, vknots, umult, vmult, int(udeg), int(vdeg), uperiod, vperiod).GetHandle()
+    else:
+        return Geom_BSplineSurface(cpts, uknots, vknots, umult, vmult, int(udeg), int(vdeg), uperiod, vperiod).GetHandle()
 
 
 ### Create geometries
