@@ -10,19 +10,20 @@ from mpl_toolkits.mplot3d import Axes3D
 from OCC.Geom import Geom_Line, Geom_BSplineSurface
 from OCC.GeomAPI import GeomAPI_ExtremaCurveSurface
 from OCC.gp import gp_Pnt, gp_Dir
-from OCC.TColgp import TColgp_Array2OfPnt, TColgp_Array1OfPnt
+from OCC.TColgp import TColgp_Array2OfPnt
 from OCC.TColStd import TColStd_Array1OfReal, TColStd_Array1OfInteger, TColStd_Array2OfReal
 
 fig = plt.figure()
 ax = fig.gca(projection='3d')
 
-### PythonOCC helpers
 
-def line_from_points(points=[[0.9,0.9,0.9]], vecs=[[1,1,0]]):
+### PythonOCC helpers
+def line_from_points(points=[[0.9, 0.9, 0.9]], vecs=[[1, 1, 0]]):
     '''
     Create line objects from points/vectors
     '''
     return [Geom_Line(gp_Pnt(*p), gp_Dir(*vec)).GetHandle() for p, vec in zip(points, vecs)]
+
 
 def get_pythonocc_bspline_surface(surf_input, use_weights=False):
     '''
@@ -30,9 +31,10 @@ def get_pythonocc_bspline_surface(surf_input, use_weights=False):
     '''
     try:
         return surface_from_interpolation(surf_input)
-    except (ImportError, TypeError) as e:
-        print('Could not create surface by interpolation. Falling back to stored data in surf_data_py%s.p.'%sys.version_info[0])
-        with open('surf_data_py%s.p'%sys.version_info[0], 'rb') as f:
+    except (ImportError, TypeError):
+        print('Could not create surface by interpolation. '
+              'Falling back to stored data in surf_data_py%s.p.' % sys.version_info[0])
+        with open('surf_data_py%s.p' % sys.version_info[0], 'rb') as f:
             data = pickle.load(f)
 
     pts_ = data['pts_']
@@ -66,13 +68,14 @@ def get_pythonocc_bspline_surface(surf_input, use_weights=False):
         vmult.SetValue(i+1, int(val))
 
     if use_weights:
-        return Geom_BSplineSurface(cpts, weights, uknots, vknots, umult, vmult, int(udeg), int(vdeg), uperiod, vperiod).GetHandle()
+        return Geom_BSplineSurface(cpts, weights, uknots, vknots, umult, vmult,
+                                   int(udeg), int(vdeg), uperiod, vperiod).GetHandle()
     else:
-        return Geom_BSplineSurface(cpts, uknots, vknots, umult, vmult, int(udeg), int(vdeg), uperiod, vperiod).GetHandle()
+        return Geom_BSplineSurface(cpts, uknots, vknots, umult, vmult,
+                                   int(udeg), int(vdeg), uperiod, vperiod).GetHandle()
 
 
 ### Create geometries
-
 def surface_from_interpolation(input_array):
     '''
     Generate
@@ -96,30 +99,34 @@ def generate_ellipsoid(a, b, c, nu=40, nv=60):
         x = c*np.sin(u_)*np.ones(v.shape)+c
         y = a*np.cos(u_)*np.cos(v)
         z = b*np.cos(u_)*np.sin(v)
-        profs.append([[x,y,z]])
+        profs.append([[x, y, z]])
         ax.plot(x, y, z)
 
-    return np.array(profs).squeeze().swapaxes(1,2)
+    return np.array(profs).squeeze().swapaxes(1, 2)
 
 
 def generate_intersection_vectors(c, nxu=100, nxv=10):
     '''
     Generation routine for the intersection vectors
     '''
-    vec_x = np.linspace(0.005*c ,1.995*c, nxu)
+    vec_x = np.linspace(0.005*c, 1.995*c, nxu)
     vec_phi = np.linspace(0, 2*np.pi, nxv)
-    v0 = np.pad(vec_x.reshape(-1,1), ((0, 0),(0, 2)), mode='constant')
+    v0 = np.pad(vec_x.reshape(-1, 1), ((0, 0), (0, 2)), mode='constant')
 
-    return np.vstack([np.hstack([v0, np.vstack([np.zeros(vec_x.shape), np.zeros(vec_x.shape)+np.cos(phi), np.zeros(vec_x.shape)+np.sin(phi)]).T]) for phi in vec_phi])
+    return np.vstack([np.hstack([v0,
+                                 np.vstack([np.zeros(vec_x.shape),
+                                            np.zeros(vec_x.shape)+np.cos(phi),
+                                            np.zeros(vec_x.shape)+np.sin(phi)]).T])
+                      for phi in vec_phi])
+
 
 ###  Intersect
-
 def intersect(surf_input, v):
     '''
     Actual intersection
     '''
     occsurf = get_pythonocc_bspline_surface(surf_input)
-    occvecs = line_from_points(v[:,:3], v[:,3:])
+    occvecs = line_from_points(v[:, :3], v[:, 3:])
 
     xpts = []
     fails = []
@@ -129,7 +136,7 @@ def intersect(surf_input, v):
         x = GeomAPI_ExtremaCurveSurface(curve, occsurf, 0., 6., 0., 1., 0., 1.)
         w, u, v = x.LowerDistanceParameters()
         vec = curve.GetObject().Value(w)
-        if x.LowerDistance()>1e-4:
+        if x.LowerDistance() > 1e-4:
             failure = np.array([vec.X(), vec.Y(), vec.Z()])
         xpts.append(np.array([vec.X(), vec.Y(), vec.Z()]))
         fails.append(failure)
@@ -148,7 +155,7 @@ def intersect(surf_input, v):
     plt.show()
 
 
-if __name__ ==  "__main__":
-    basis_profiles = generate_ellipsoid(5.,5.,40.) #just for show, using stored BSpline surface data from pickle
+if __name__ == "__main__":
+    basis_profiles = generate_ellipsoid(5., 5., 40.)  #just for show, using stored BSpline surface data from pickle
     v = generate_intersection_vectors(40., nxu=50, nxv=50)
     intersect(basis_profiles, v)
