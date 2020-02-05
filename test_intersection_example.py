@@ -56,8 +56,10 @@ def test_plot_matplotlib(intersections, points_and_vectors):
     ax.plot(*xpts[isfailure].T, marker='o', color='r', ls='', alpha=0.8)
     ax.quiver(*v[isfailure].T, color='r', alpha=0.8, pivot='tail', length=6.)
 
-    plt.show()
+    import OCC
+    plt.title('OCC Version: {}\nTime: {}, Failures: {}'.format(OCC.VERSION, np.sum(times), sum(isfailure)))
+    plt.savefig('result_{}.png'.format(OCC.VERSION))
 
 
 if __name__ == "__main__":
-    pytest.main([__file__ + '::test_intersections'])
+    pytest.main([__file__, '-sv'])
