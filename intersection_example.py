@@ -105,7 +105,7 @@ def intersect(occsurf, occvecs, v, show_occ=False):
 
 def write_vtk_output(surface, times, isfailure, xpts, pts, vecs):
     import vtkhelpers
-    from occhelpers.components import OCCBSplineSurface
+    from occhelpers.geom import OCCBSplineSurface
 
     OCCBSplineSurface.from_raw_object(surface).to_interpol_bspline_surface().to_vtk().write('surf')
     vtklines = vtkhelpers.multiple_lines_from_grids(np.dstack((pts,
@@ -126,4 +126,4 @@ def write_vtk_output(surface, times, isfailure, xpts, pts, vecs):
 
 if __name__ == "__main__":
     import pytest
-    pytest.main(['test_intersection.py', '-sv'])
+    pytest.main(['test_intersection_example.py', '-sv'])
