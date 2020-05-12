@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from intersection_example import *
@@ -28,6 +29,13 @@ def intersections(surface, lines, points_and_vectors):
 def test_intersections(intersections):
     _, isfailure, _ = intersections
     assert not np.sum(isfailure)
+
+
+def test_compare_intersection_points(intersections):
+    _, isfailure, xpts = intersections
+    xpts_expected = np.loadtxt('expected_points.csv', delimiter=',')
+    matching = np.all(np.isclose(xpts, xpts_expected), axis=1)
+    assert np.all(~matching == isfailure)
 
 
 def test_plot_vtk(surface, points_and_vectors, intersections):
